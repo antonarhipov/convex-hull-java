@@ -1,6 +1,6 @@
 package me.arhan.aidemo;
 
-import me.arhan.aidemo.math.D;
+import me.arhan.aidemo.math.Coordinate;
 import me.arhan.aidemo.math.TheAlgorithm;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,9 +13,9 @@ import java.util.List;
 public class AlgorithmController {
 
     @PostMapping("/convex")
-    public ResponseEntity<List<D>> createDList(@RequestBody List<D> ds) {
-        D[] input = ds.toArray(new D[0]);
-        List<D> result = TheAlgorithm.run(input);
+    public ResponseEntity<List<Coordinate>> createDList(@RequestBody List<Coordinate> coordinates) {
+        Coordinate[] input = coordinates.toArray(new Coordinate[0]);
+        List<Coordinate> result = TheAlgorithm.run(input);
         System.out.println("The convex contains " + result.size() + " points");
         return ResponseEntity.ok(result);
     }

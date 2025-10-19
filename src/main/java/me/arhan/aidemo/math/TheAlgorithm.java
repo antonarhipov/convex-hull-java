@@ -5,7 +5,7 @@ import java.util.List;
 
 public class TheAlgorithm {
 
-    public static int t(D p, D q, D r) {
+    public static int t(Coordinate p, Coordinate q, Coordinate r) {
         int val = (q.y - p.y) * (r.x - q.x) -
                   (q.x - p.x) * (r.y - q.y);
 
@@ -13,10 +13,10 @@ public class TheAlgorithm {
         return (val > 0) ? 1 : 2;
     }
 
-    public static List<D> run(D[] dts) {
+    public static List<Coordinate> run(Coordinate[] dts) {
         if (dts.length < 3) return null;
 
-        List<D> ds = new ArrayList<>();
+        List<Coordinate> coordinates = new ArrayList<>();
 
         int l = 0;
         int l1 = l;
@@ -27,7 +27,7 @@ public class TheAlgorithm {
 
         int p = l, q;
         do {
-            ds.add(dts[p]);
+            coordinates.add(dts[p]);
             q = (p + 1) % dts.length;
 
             for (int i = 0; i < dts.length; i++) {
@@ -39,10 +39,10 @@ public class TheAlgorithm {
 
         } while (p != l);
 
-        for (D temp : ds)
+        for (Coordinate temp : coordinates)
             System.out.println("(" + temp.x + ", " + temp.y + ")");
 
-        return ds;
+        return coordinates;
     }
 
 }

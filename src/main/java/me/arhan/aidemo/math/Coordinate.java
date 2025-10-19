@@ -1,9 +1,9 @@
 package me.arhan.aidemo.math;
 
-public class D {
+public class Coordinate {
     public int x, y;
 
-    public D(int x, int y) {
+    public Coordinate(int x, int y) {
         this.x = x;
         this.y = y;
     }
