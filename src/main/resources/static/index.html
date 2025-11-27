@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convex Hull Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            height: calc(100vh - 40px);
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .content {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            flex: 0 0 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            flex: 1;
+            min-height: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            resize: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        #generateBtn {
+            background-color: #28a745;
+        }
+
+        #generateBtn:hover {
+            background-color: #218838;
+        }
+
+        #submitBtn {
+            background-color: #007bff;
+        }
+
+        #submitBtn:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .canvas-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            width: 100%;
+            height: 100%;
+        }
+
+        .result-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .error {
+            color: #dc3545;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+        }
+
+        .info {
+            padding: 10px;
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            color: #0c5460;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .legend {
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .red { background-color: #ff0000; }
+        .black { background-color: #000000; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Convex Hull Visualizer</h1>
+
+        <div class="content">
+            <div class="left-panel">
+                <div class="form-group">
+                    <label for="pointCount">Number of random points:</label>
+                    <input type="number" id="pointCount" value="20" min="3" max="1000">
+                </div>
+
+                <div class="button-group">
+                    <button id="generateBtn" onclick="generateRandomPoints()">Generate</button>
+                    <button id="submitBtn" onclick="computeConvexHull()">Submit</button>
+                </div>
+
+                <div class="input-section">
+                    <label for="coordinates">Coordinates JSON:</label>
+                    <textarea id="coordinates" placeholder='[{"x": 10, "y": 20}, {"x": 30, "y": 40}]'></textarea>
+                </div>
+
+                <div id="error" class="error" style="display: none;"></div>
+
+                <div class="info">
+                    <strong>Tip:</strong> Use Generate to create random coordinates or paste your own JSON array
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="canvas-section">
+                    <canvas id="canvas"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color red"></div>
+                            <span>Convex hull points</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color black"></div>
+                            <span>Other points</span>
+                        </div>
+                    </div>
+                    <div id="resultInfo" class="result-info" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allPoints = [];
+        let convexHullPoints = [];
+
+        // Initialize canvas size on load
+        window.addEventListener('load', () => {
+            resizeCanvas();
+        });
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            if (allPoints.length > 0) {
+                drawVisualization();
+            }
+        });
+
+        function resizeCanvas() {
+            const canvas = document.getElementById('canvas');
+            const canvasSection = canvas.parentElement;
+            const rect = canvasSection.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height - 80; // Account for legend and result info
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function showResult(message) {
+            const resultDiv = document.getElementById('resultInfo');
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+        }
+
+        function generateRandomPoints() {
+            hideError();
+            const countInput = document.getElementById('pointCount');
+            const count = parseInt(countInput.value);
+
+            if (isNaN(count) || count < 3) {
+                showError('Please enter at least 3 points');
+                return;
+            }
+
+            if (count > 1000) {
+                showError('Maximum 1000 points allowed');
+                return;
+            }
+
+            const points = [];
+            const minCoord = 0;
+            const maxCoord = 500;
+
+            for (let i = 0; i < count; i++) {
+                points.push({
+                    x: Math.floor(Math.random() * (maxCoord - minCoord + 1)) + minCoord,
+                    y: Math.floor(Math.random() * (maxCoord - minCoord + 1)) + minCoord
+                });
+            }
+
+            const textarea = document.getElementById('coordinates');
+            textarea.value = JSON.stringify(points, null, 2);
+        }
+
+        async function computeConvexHull() {
+            hideError();
+            const textarea = document.getElementById('coordinates');
+            const submitBtn = document.getElementById('submitBtn');
+
+            try {
+                // Parse JSON input
+                const input = textarea.value.trim();
+                if (!input) {
+                    showError('Please enter coordinates');
+                    return;
+                }
+
+                allPoints = JSON.parse(input);
+
+                // Validate input
+                if (!Array.isArray(allPoints)) {
+                    showError('Input must be an array of coordinates');
+                    return;
+                }
+
+                if (allPoints.length === 0) {
+                    showError('Array cannot be empty');
+                    return;
+                }
+
+                // Validate each coordinate
+                for (let i = 0; i < allPoints.length; i++) {
+                    const point = allPoints[i];
+                    if (!point.hasOwnProperty('x') || !point.hasOwnProperty('y')) {
+                        showError(`Point at index ${i} is missing x or y property`);
+                        return;
+                    }
+                    if (typeof point.x !== 'number' || typeof point.y !== 'number') {
+                        showError(`Point at index ${i} has non-numeric x or y value`);
+                        return;
+                    }
+                }
+
+                // Disable button during request
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Computing...';
+
+                // POST to /convex endpoint
+                const response = await fetch('/convex', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(allPoints)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+
+                convexHullPoints = await response.json();
+
+                // Show result info
+                showResult(`Input: ${allPoints.length} points | Convex Hull: ${convexHullPoints.length} points`);
+
+                // Draw the visualization
+                drawVisualization();
+
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit';
+            }
+        }
+
+        function drawVisualization() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            if (allPoints.length === 0) {
+                return;
+            }
+
+            // Find min and max coordinates for scaling
+            let minX = allPoints[0].x;
+            let maxX = allPoints[0].x;
+            let minY = allPoints[0].y;
+            let maxY = allPoints[0].y;
+
+            allPoints.forEach(point => {
+                minX = Math.min(minX, point.x);
+                maxX = Math.max(maxX, point.x);
+                minY = Math.min(minY, point.y);
+                maxY = Math.max(maxY, point.y);
+            });
+
+            // Add padding
+            const padding = 50;
+            const drawWidth = width - 2 * padding;
+            const drawHeight = height - 2 * padding;
+
+            // Calculate scale
+            const rangeX = maxX - minX || 1;
+            const rangeY = maxY - minY || 1;
+            const scale = Math.min(drawWidth / rangeX, drawHeight / rangeY);
+
+            // Function to transform coordinates to canvas space
+            function toCanvasX(x) {
+                return padding + (x - minX) * scale;
+            }
+
+            function toCanvasY(y) {
+                return height - padding - (y - minY) * scale;
+            }
+
+            // Create a set of convex hull points for quick lookup
+            const hullSet = new Set(convexHullPoints.map(p => `${p.x},${p.y}`));
+
+            // Draw lines connecting convex hull points
+            if (convexHullPoints.length > 1) {
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+
+                const firstPoint = convexHullPoints[0];
+                ctx.moveTo(toCanvasX(firstPoint.x), toCanvasY(firstPoint.y));
+
+                for (let i = 1; i < convexHullPoints.length; i++) {
+                    const point = convexHullPoints[i];
+                    ctx.lineTo(toCanvasX(point.x), toCanvasY(point.y));
+                }
+
+                // Close the hull
+                ctx.lineTo(toCanvasX(firstPoint.x), toCanvasY(firstPoint.y));
+                ctx.stroke();
+            }
+
+            // Draw all points
+            allPoints.forEach(point => {
+                const cx = toCanvasX(point.x);
+                const cy = toCanvasY(point.y);
+                const isHullPoint = hullSet.has(`${point.x},${point.y}`);
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, isHullPoint ? 6 : 4, 0, 2 * Math.PI);
+                ctx.fillStyle = isHullPoint ? '#ff0000' : '#000000';
+                ctx.fill();
+            });
+        }
+    </script>
+</body>
+</html>
